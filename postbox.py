@@ -89,7 +89,11 @@ class Gmail(Postbox):
     port = '587'
 
 
-from email.mime.text import MIMEText
+
+from email.MIMEBase import MIMEBase
+from email.MIMEText import MIMEText
+from email import Encoders
+import os
 """
 Subclass of Postbox
 """
@@ -101,17 +105,20 @@ class PostboxEnc(Postbox):
     1) given the filetype .txt in attachment
     """
     def send(self, file, body, **headers_dict):
-
+        
+        msg = MIMEMultipart()
         sendmail_args = {'from': self.user, 'to': self.user} # write in a tricky way
 
-        fp = open(file, 'r')
-        self.attachment = MIMEText(fp.read())
-        fp.close()
+        attachment = MIMEBase('application', 'octet-stream')
+        attachment.set_payload( open(file, "r").read() )
+        Encoders.encode_base64(attachment)
+        attachment.add_header('Content-Disposition', 'attahment="%s"' % os.path.basename(file))
+        msg.attach(attachment)
 
         self.server.sendmail(
             sendmail_args['from'],
             sendmail_args['to'],
-            self.attachment.as_string())
+            msg.as_string())
 
         self.server.quit()
         
