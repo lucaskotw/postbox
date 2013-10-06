@@ -89,7 +89,7 @@ class Gmail(Postbox):
     port = '587'
 
 
-from 
+from email.mime.text import MIMEText
 """
 Subclass of Postbox
 """
