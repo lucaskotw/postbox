@@ -68,6 +68,8 @@ class Postbox(object):
 
         if not self.dry_run:
             self.server.sendmail(
+
+
                 sendmail_args['from'],
                 sendmail_args['to'],
                 '%s\r\n\r\n%s' % (headers, body)
@@ -85,3 +87,32 @@ class Postbox(object):
 class Gmail(Postbox):
     host = 'smtp.gmail.com'
     port = '587'
+
+
+from 
+"""
+Subclass of Postbox
+"""
+class PostboxEnc(Postbox):
+    """
+    override method send
+    prerequest:
+    
+    1) given the filetype .txt in attachment
+    """
+    def send(self, file, body, **headers_dict):
+
+        sendmail_args = {'from': self.user, 'to': self.user} # write in a tricky way
+
+        fp = open(file, 'r')
+        self.attachment = MIMEText(fp.read())
+        fp.close()
+
+        self.server.sendmail(
+            sendmail_args['from'],
+            sendmail_args['to'],
+            self.attachment.as_string())
+
+        self.server.quit()
+        
+        
