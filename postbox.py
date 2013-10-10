@@ -90,37 +90,83 @@ class Gmail(Postbox):
 
 
 
-from email.MIMEBase import MIMEBase
-from email.MIMEText import MIMEText
-from email.MIMEMultipart import MIMEMultipart
-from email import Encoders
-import os
-"""
-Subclass of Postbox
-"""
-class PostboxEnc(Postbox):
-    """
-    override method send
-    prerequest:
-    
-    1) given the filetype .txt in attachment
-    """
-    def send(self, file, body, **headers_dict):
-        
-        msg = MIMEMultipart()
-        sendmail_args = {'from': self.user, 'to': 'lucaskointw@gmail.com'} # write in a tricky way
 
-        attachment = MIMEBase('application', 'octet-stream')
-        attachment.set_payload( open(file, "r").read() )
-        Encoders.encode_base64(attachment)
-        attachment.add_header('Content-Disposition', 'attahment="%s"' % os.path.basename(file))
-        msg.attach(attachment)
+from email.MIMEMultipart import MIMEMultipart # the wrapper of the whole msg
+from email import Encoders                    # for attachments encoding 
+from email.MIMEBase import MIMEBase           # the wrapper of the content
+import os                                     # find the path of the attachments
+
+
+class PostboxAtt(Postbox):
+    """
+    This class is a subclass of Postbox. It overrides sends method. Besides, it has attachBody and attachAttachments as its methods.
+
+    Example usage of method send:
+
+    mail.send(
+            to = 'Lucas Ko <lucaskointw@gmail.com>',
+            subject = 'first version of PostboxAtt',
+            body    = 'Hey! First version!',
+            attachments = ['<attachment_name in current dir>']
+    )
+    """
+    def send(self, body, **headers):
+
+
+        msg         = MIMEMultipart()   # wrap mail to MIME object
+
+        msg['from'] = self.user         # msg headers initial declaration
+
+        self.attachBody(msg, body)      # attach body as inline
+
+
+        for key, value in headers.items():
+
+            key = key.rstrip('_').lower().replace('_', '-') # for reply_to case
+            if key == 'attachments':
+                # attachments case
+                self.attachAssignments(msg, value)
+
+            elif hasattr(value, '__iter__') and not isinstance(value, str):
+                # for those headers whose arguments is list
+                value = ', '.join(value)
+                msg[key] = value
+
+            elif isinstance(value, str):
+                # for those headers whose arguments is str
+                msg[key] = value
+
+
 
         self.server.sendmail(
-            sendmail_args['from'],
-            sendmail_args['to'],
+            msg['from'],
+            msg['to'],
             msg.as_string())
 
-        self.server.quit()
-        
-        
+
+    def attachBody(self, msg, body):
+        """  attach body to the mime obj """
+        content = MIMEBase('text', 'plain')                 # content-type
+        content.set_payload(body)                           # set the body to the content
+        content.add_header('Content-Disposition', 'inline')
+        msg.attach(content)
+
+        return msg
+
+
+
+    def attachAssignments(self, msg, attachments):
+        """ recursively attach enclosure to msg """
+
+        for att in attachments:
+            filename = att
+            att = MIMEBase('application', 'octet-stream')
+            att.set_payload( open(filename, "r").read() )
+
+            Encoders.encode_base64(att) # for content-transfer-encoding
+
+            # for each attachment, add headers
+            att.add_header('Content-Disposition', 'attahment; filename="%s"' % os.path.basename(filename))
+            msg.attach(att)
+
+        return msg
